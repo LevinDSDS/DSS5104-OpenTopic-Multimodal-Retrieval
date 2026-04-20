@@ -1,0 +1,36 @@
+experiment_name: aitr_flickr30k_bigru
+data_root: /path/to/data
+dataset: flickr30k
+text_encoder: bigru
+vocab_path: runs/flickr30k_bigru/vocab.json
+max_len: 64
+batch_size: 128
+num_workers: 4
+
+model:
+  img_in_dim: 2048
+  embed_dim: 1024
+  n_proto: 100
+  tau: 100
+  csa_windows: [1, 2, 3, 4, 5]
+  csa_strides: [1, 1, 2, 2, 3]
+  csa_alpha: 0.4
+  csa_top_pairs: 10
+  z_balanced: 0.4
+  z_unbalanced: 0.2
+  lambdas: [0.5, 0.1, 0.1]
+
+optim:
+  lr: 5.0e-4
+  weight_decay: 0.0
+  epochs: 20
+  margin: 0.2
+  grad_clip: 2.0
+  lr_decay_epoch: 15
+  lr_decay_factor: 0.1
+
+logging:
+  ckpt_dir: runs/flickr30k_bigru
+  log_every: 50
+  eval_every_epoch: 1
+  seed: 42

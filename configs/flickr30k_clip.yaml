@@ -1,0 +1,47 @@
+# AITR + CLIP-ViT-L/14 patch tokens (independent reproduction path).
+#
+# The visual features are produced by `python -m data.extract_clip`
+# with `--model openai/clip-vit-large-patch14`, which yields
+# (N, 257, 1024) tokens (1 CLS + 16x16 patches).  Switch to
+# `clip-vit-base-patch32` and set img_in_dim=768 for the lighter tier.
+#
+# Paper Tables 1-2 are produced by the BUTD (VG-pretrained Faster
+# R-CNN) path -- this YAML is for the CLIP plug-in re-ranker, which
+# reproduces the numbers in Sec. 5.2 "CLIP / BLIP plug-in" only.
+experiment_name: aitr_flickr30k_clip
+data_root: /path/to/data_clip          # override per-machine
+dataset: flickr30k_clip                # a directory with precomp/{split}_{ims,caps}
+text_encoder: bert
+bert_name: bert-base-uncased
+max_len: 64
+batch_size: 32                         # ViT-L features are heavier
+num_workers: 4
+
+model:
+  img_in_dim: 1024                     # CLIP ViT-L/14 hidden size
+  embed_dim: 1024
+  n_proto: 100
+  tau: 100
+  csa_windows: [1, 2, 3, 4, 5]
+  csa_strides: [1, 1, 2, 2, 3]
+  csa_alpha: 0.4
+  csa_top_pairs: 10
+  z_balanced: 0.4
+  z_unbalanced: 0.2
+  lambdas: [0.5, 0.1, 0.1]
+  eval_chunk: 64                       # P=257 tokens -> tighter memory
+
+optim:
+  lr: 2.0e-5
+  weight_decay: 1.0e-4
+  epochs: 15                           # CLIP features converge faster
+  margin: 0.2
+  grad_clip: 2.0
+  lr_decay_epoch: 10
+  lr_decay_factor: 0.1
+
+logging:
+  ckpt_dir: runs/flickr30k_clip
+  log_every: 50
+  eval_every_epoch: 1
+  seed: 42

@@ -1,0 +1,36 @@
+{
+  "_doc": "Template for the SCAN-style Flickr30K split file. Replace the three stubs below with the full lists (29 000 / 1 014 / 1 000 images) as shipped by SCAN (Lee et al., 2018). Each entry is a JPG filename (relative to --images) plus exactly 5 captions; image_id must match the file on disk.",
+
+  "train": [
+    {"image_id": "1000092795.jpg",
+     "captions": [
+       "Two young guys with shaggy hair look at their hands while hanging out in the yard.",
+       "Two young, white males are outside near many bushes.",
+       "Two men in green shirts are standing in a yard.",
+       "A man in a blue shirt standing in a garden.",
+       "Two friends enjoy time spent together."
+     ]}
+  ],
+
+  "dev": [
+    {"image_id": "1009434119.jpg",
+     "captions": [
+       "A blonde horse and a blonde girl in a black sweatshirt are staring at a fire in a barrel.",
+       "A girl and her horse stand by a fire.",
+       "A girl holding a horse's lead behind a fire.",
+       "A man, and girl and two horses are near a contained fire.",
+       "Two people and two horses are watching a fire."
+     ]}
+  ],
+
+  "test": [
+    {"image_id": "1007129816.jpg",
+     "captions": [
+       "A man in an orange hat starring at something.",
+       "A man wears an orange hat and glasses.",
+       "A man with gauges and glasses is wearing a Blitz hat.",
+       "A man in an orange hat with a face piercing.",
+       "A man wearing a bright orange hat looking at something."
+     ]}
+  ]
+}

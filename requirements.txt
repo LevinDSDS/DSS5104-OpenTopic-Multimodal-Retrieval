@@ -1,0 +1,17 @@
+# ----- core -----
+torch>=2.0
+numpy>=1.23
+pyyaml>=6.0
+tqdm>=4.65
+
+# ----- testing (pulled by `pytest tests/` and CI) -----
+pytest>=8.0
+
+# ----- optional: only needed for specific features -----
+# transformers : required when text_encoder == "bert"
+# torchvision  : required for  data/extract_features.py --backend torchvision
+# nltk         : optional; data/vocab.py falls back to a regex tokenizer
+#                when either nltk or its punkt resource is missing.
+transformers>=4.36
+torchvision>=0.15
+nltk>=3.8

@@ -1,0 +1,142 @@
+name: aitr-ci
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+      - name: Install CPU-only PyTorch + deps
+        run: |
+          python -m pip install --upgrade pip
+          # CPU-only torch keeps the CI container small (<1 GB).
+          pip install --index-url https://download.pytorch.org/whl/cpu \
+              "torch>=2.0" "torchvision>=0.15"
+          pip install numpy pyyaml tqdm pytest
+          # nltk is optional -- vocab.py falls back to a regex tokenizer.
+
+      - name: Unit tests (IDF / IDE / CSA / loss)
+        run: pytest tests/ -q
+
+      - name: Generate synthetic precomp/ (toy dataset)
+        run: |
+          python data/make_toy_precomp.py \
+              --out       data/toy_precomp/flickr30k \
+              --n_train   64  --n_dev 16  --n_test 16 \
+              --include_testall
+
+      - name: End-to-end smoke -- 1 training step on toy precomp
+        run: |
+          python - <<'PY'
+          import sys, yaml, torch
+          sys.path.insert(0, '.')
+          from aitr import AITR, AITRConfig, TripletRankingLoss
+          from data import get_loaders, build_or_load_vocab
+
+          cfg = yaml.safe_load(open('configs/toy_bigru.yaml'))
+          caps = [c.strip() for c in
+                  open('data/toy_precomp/flickr30k/precomp/train_caps.txt')]
+          vocab = build_or_load_vocab(
+              'data/toy_precomp/flickr30k/vocab.json',
+              sentences=caps, min_freq=1)
+
+          loaders = get_loaders(cfg, vocab, None)
+          m = cfg['model']
+          model = AITR(AITRConfig(
+              img_in_dim=m['img_in_dim'], embed_dim=m['embed_dim'],
+              text_encoder=cfg['text_encoder'], vocab_size=len(vocab),
+              n_proto=m['n_proto'], tau=m['tau'],
+              csa_windows=tuple(m['csa_windows']),
+              csa_strides=tuple(m['csa_strides']),
+              csa_alpha=m['csa_alpha'], csa_top_pairs=m['csa_top_pairs'],
+              z_balanced=m['z_balanced'], z_unbalanced=m['z_unbalanced'],
+              lambdas=tuple(m['lambdas'])))
+          model.train()
+
+          criterion = TripletRankingLoss(margin=cfg['optim']['margin'])
+          l1, l2, l3 = m['lambdas']
+          for step, (regions, text_args, _) in enumerate(loaders[0]):
+              out = model(regions, text_args)
+              sim = l1 * out['s_ini_mat'] + l2 * out['s_ins_mat']
+              loss = criterion(sim) - l3 * out['s_fra_diag'].mean()
+              loss.backward()
+              print(f'step {step}  loss {loss.item():.4f}')
+              if step >= 1:
+                  break
+          print('smoke train OK')
+          PY
+
+      - name: Smoke test for extract_features (bundle / bottom_up / tv)
+        run: pytest tests/test_extract_features.py -q
+
+      - name: Smoke test for extract_clip CLI (no HF weights needed)
+        run: pytest tests/test_extract_clip.py -q
+
+      - name: verify_precomp on the toy dataset
+        run: |
+          python -m data.verify_precomp \
+              --precomp data/toy_precomp/flickr30k/precomp
+          # also make sure it rejects a deliberately-broken bundle
+          # (non-standard dim -> should always fail):
+          python - <<'PY'
+          import numpy as np, os, subprocess, tempfile, sys
+          tmp = tempfile.mkdtemp()
+          np.save(os.path.join(tmp, 'train_ims.npy'),
+                  np.zeros((2, 36, 777), dtype=np.float32))
+          with open(os.path.join(tmp, 'train_caps.txt'), 'w') as f:
+              for _ in range(10): f.write('x\n')
+          r = subprocess.run([sys.executable, '-m', 'data.verify_precomp',
+                              '--precomp', tmp, '--splits', 'train'],
+                             capture_output=True, text=True)
+          assert r.returncode != 0, 'verify_precomp should flag 777-D feats'
+          print('verify_precomp negative-case OK')
+          PY
+          # and that a CLIP-style (257, 1024) bundle passes when the
+          # expected token / dim flags are passed explicitly.
+          python - <<'PY'
+          import numpy as np, os, subprocess, tempfile, sys
+          tmp = tempfile.mkdtemp()
+          rng = np.random.default_rng(0)
+          for split in ('train', 'dev', 'test'):
+              np.save(os.path.join(tmp, f'{split}_ims.npy'),
+                      rng.standard_normal((2, 257, 1024)).astype(np.float32))
+              with open(os.path.join(tmp, f'{split}_caps.txt'), 'w') as f:
+                  for _ in range(10): f.write('clip caption\n')
+          r = subprocess.run([sys.executable, '-m', 'data.verify_precomp',
+                              '--precomp', tmp,
+                              '--expected-regions', '257',
+                              '--expected-dim', '1024'],
+                             capture_output=True, text=True)
+          assert r.returncode == 0, \
+              f'verify_precomp should accept CLIP bundle, got:\n{r.stdout}\n{r.stderr}'
+          print('verify_precomp CLIP path OK')
+          PY

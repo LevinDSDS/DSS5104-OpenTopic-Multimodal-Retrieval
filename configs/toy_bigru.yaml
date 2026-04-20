@@ -1,0 +1,36 @@
+experiment_name: aitr_toy_bigru
+data_root: data/toy_precomp
+dataset: flickr30k
+text_encoder: bigru
+vocab_path: data/toy_precomp/flickr30k/vocab.json
+max_len: 32
+batch_size: 16
+num_workers: 0
+
+model:
+  img_in_dim: 2048
+  embed_dim: 256
+  n_proto: 32
+  tau: 32
+  csa_windows: [1, 2, 3]
+  csa_strides: [1, 1, 2]
+  csa_alpha: 0.4
+  csa_top_pairs: 5
+  z_balanced: 0.4
+  z_unbalanced: 0.2
+  lambdas: [0.5, 0.1, 0.1]
+
+optim:
+  lr: 2.0e-4
+  weight_decay: 1.0e-4
+  epochs: 1
+  margin: 0.2
+  grad_clip: 2.0
+  lr_decay_epoch: 10
+  lr_decay_factor: 0.1
+
+logging:
+  ckpt_dir: runs/toy_bigru
+  log_every: 10
+  eval_every_epoch: 1
+  seed: 42

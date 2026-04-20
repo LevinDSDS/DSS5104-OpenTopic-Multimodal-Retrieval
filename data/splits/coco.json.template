@@ -1,0 +1,47 @@
+{
+  "_doc": "Template for the SCAN-style MS-COCO split file. Replace the four stubs below with the Karpathy-split lists (113 287 / 5 000 / 1 000 / 5 000 images for train / dev / test / testall). Each entry is a JPG filename (relative to --images) plus exactly 5 captions; image_id must match the file on disk.",
+
+  "train": [
+    {"image_id": "COCO_train2014_000000057870.jpg",
+     "captions": [
+       "A restaurant has modern wooden tables and chairs.",
+       "A long restaurant table with rattan rounded back chairs.",
+       "A wooden dining room with a wooden ceiling and wooden tables.",
+       "A dining room with a couple of tables and a large window.",
+       "A dining area with table and chairs next to a large window."
+     ]}
+  ],
+
+  "dev": [
+    {"image_id": "COCO_val2014_000000184613.jpg",
+     "captions": [
+       "A child holding a flowered umbrella and petting a yak.",
+       "A young boy with an umbrella who is touching the horn of a cow.",
+       "A young boy with an umbrella is standing next to a cow.",
+       "A boy holding an umbrella while standing next to livestock.",
+       "A boy standing in the rain with an umbrella near a cow."
+     ]}
+  ],
+
+  "test": [
+    {"image_id": "COCO_val2014_000000403013.jpg",
+     "captions": [
+       "A woman wearing a net on her head cutting a cake.",
+       "A woman cuts a large white sheet cake.",
+       "A woman cutting a large white cake.",
+       "A woman standing in front of a sheet cake.",
+       "A woman is cutting the frosting off a white cake."
+     ]}
+  ],
+
+  "testall": [
+    {"image_id": "COCO_val2014_000000403013.jpg",
+     "captions": [
+       "A woman wearing a net on her head cutting a cake.",
+       "A woman cuts a large white sheet cake.",
+       "A woman cutting a large white cake.",
+       "A woman standing in front of a sheet cake.",
+       "A woman is cutting the frosting off a white cake."
+     ]}
+  ]
+}
