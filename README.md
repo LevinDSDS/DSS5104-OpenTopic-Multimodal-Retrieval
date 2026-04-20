@@ -1,6 +1,6 @@
 # Cross-Scale Semantic Alignment for Image–Text Retrieval
 
-[![CI](https://github.com/LevinDSDS/AITR/actions/workflows/ci.yml/badge.svg)](https://github.com/LevinDSDS/AITR/actions/workflows/ci.yml)
+[![CI](https://github.com/LevinDSDS/Assignment_Multimodal_Retrieval/actions/workflows/ci.yml/badge.svg)](https://github.com/LevinDSDS/Assignment_Multimodal_Retrieval/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -14,7 +14,7 @@ No GPU, no downloads — verify the IDF / IDE / CSA / WMF / loss pipeline
 end-to-end on a synthetic `precomp/` in under a minute:
 
 ```bash
-git clone https://github.com/LevinDSDS/AITR.git aitr
+git clone https://github.com/LevinDSDS/Assignment_Multimodal_Retrieval.git aitr
 cd aitr
 python -m pip install -r requirements.txt
 python data/make_toy_precomp.py --out data/toy_precomp/flickr30k \
@@ -88,7 +88,7 @@ aitr/
 ## 3. Installation
 
 ```bash
-git clone https://github.com/LevinDSDS/AITR.git aitr
+git clone https://github.com/LevinDSDS/Assignment_Multimodal_Retrieval.git aitr
 cd aitr
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
