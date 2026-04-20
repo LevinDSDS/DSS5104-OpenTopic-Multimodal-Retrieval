@@ -40,6 +40,7 @@ def _pkg_available(name: str) -> bool:
 
 
 _HAS_TORCHVISION = _pkg_available("torchvision")
+_IN_CI = os.environ.get("CI", "").lower() in ("true", "1")
 
 
 # ------------------------------------------------------------ helpers
@@ -187,8 +188,8 @@ def test_bundle_rejects_empty_dir(tmp_path):
 
 # ------------------------------------------------------- torchvision path
 @pytest.mark.skipif(
-    not _HAS_TORCHVISION,
-    reason="torchvision not installed; skipping BUTD-style smoke test")
+    not _HAS_TORCHVISION or _IN_CI,
+    reason="Skipped: torchvision not installed or CI (downloads ~500 MB models)")
 def test_torchvision_one_image(tmp_path):
     """Run the torchvision backend end-to-end on a single tiny image."""
     import torch                            # noqa: F401 (import-time check)

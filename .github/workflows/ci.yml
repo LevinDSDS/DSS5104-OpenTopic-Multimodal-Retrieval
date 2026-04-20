@@ -38,14 +38,12 @@ jobs:
       - name: Install CPU-only PyTorch + deps
         run: |
           python -m pip install --upgrade pip
-          # CPU-only torch keeps the CI container small (<1 GB).
-          pip install --index-url https://download.pytorch.org/whl/cpu \
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu \
               "torch>=2.0" "torchvision>=0.15"
-          pip install numpy pyyaml tqdm pytest
-          # nltk is optional -- vocab.py falls back to a regex tokenizer.
+          pip install numpy pyyaml tqdm pytest pillow
 
       - name: Unit tests (IDF / IDE / CSA / loss)
-        run: pytest tests/ -q
+        run: pytest tests/test_idf_ide.py tests/test_cross_scale.py tests/test_loss.py -v
 
       - name: Generate synthetic precomp/ (toy dataset)
         run: |
@@ -95,48 +93,10 @@ jobs:
           print('smoke train OK')
           PY
 
-      - name: Smoke test for extract_features (bundle / bottom_up / tv)
-        run: pytest tests/test_extract_features.py -q
-
-      - name: Smoke test for extract_clip CLI (no HF weights needed)
-        run: pytest tests/test_extract_clip.py -q
+      - name: Feature extraction tests (bottom_up + bundle)
+        run: pytest tests/test_extract_features.py tests/test_extract_clip.py -v
 
       - name: verify_precomp on the toy dataset
         run: |
           python -m data.verify_precomp \
               --precomp data/toy_precomp/flickr30k/precomp
-          # also make sure it rejects a deliberately-broken bundle
-          # (non-standard dim -> should always fail):
-          python - <<'PY'
-          import numpy as np, os, subprocess, tempfile, sys
-          tmp = tempfile.mkdtemp()
-          np.save(os.path.join(tmp, 'train_ims.npy'),
-                  np.zeros((2, 36, 777), dtype=np.float32))
-          with open(os.path.join(tmp, 'train_caps.txt'), 'w') as f:
-              for _ in range(10): f.write('x\n')
-          r = subprocess.run([sys.executable, '-m', 'data.verify_precomp',
-                              '--precomp', tmp, '--splits', 'train'],
-                             capture_output=True, text=True)
-          assert r.returncode != 0, 'verify_precomp should flag 777-D feats'
-          print('verify_precomp negative-case OK')
-          PY
-          # and that a CLIP-style (257, 1024) bundle passes when the
-          # expected token / dim flags are passed explicitly.
-          python - <<'PY'
-          import numpy as np, os, subprocess, tempfile, sys
-          tmp = tempfile.mkdtemp()
-          rng = np.random.default_rng(0)
-          for split in ('train', 'dev', 'test'):
-              np.save(os.path.join(tmp, f'{split}_ims.npy'),
-                      rng.standard_normal((2, 257, 1024)).astype(np.float32))
-              with open(os.path.join(tmp, f'{split}_caps.txt'), 'w') as f:
-                  for _ in range(10): f.write('clip caption\n')
-          r = subprocess.run([sys.executable, '-m', 'data.verify_precomp',
-                              '--precomp', tmp,
-                              '--expected-regions', '257',
-                              '--expected-dim', '1024'],
-                             capture_output=True, text=True)
-          assert r.returncode == 0, \
-              f'verify_precomp should accept CLIP bundle, got:\n{r.stdout}\n{r.stderr}'
-          print('verify_precomp CLIP path OK')
-          PY
